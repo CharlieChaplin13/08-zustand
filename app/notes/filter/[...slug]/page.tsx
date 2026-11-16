@@ -18,7 +18,7 @@ export async function generateMetadata({ params }: NotesByCategoryProps): Promis
     openGraph: {
       title: `Note: ${currentTag}`,
       description: `${currentTag}`,
-      url: `https://notehub.com/notes/filter/[...slug]/${currentTag}`,
+      url: `https://notehub.com/notes/filter/${currentTag}`,
       images: [
         {
           url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
