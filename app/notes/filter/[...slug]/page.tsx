@@ -13,7 +13,21 @@ export async function generateMetadata({ params }: NotesByCategoryProps): Promis
   const { slug } = await params
   const currentTag = (slug && slug.length > 0 ? slug[0] : 'all') as NoteTag | 'all';
   return {
-    title: `Note: ${currentTag}`
+    title: `Note: ${currentTag}`,
+    description: "The app for writing, editing, and browsing notes.",
+    openGraph: {
+      title: `Note: ${currentTag}`,
+      description: `${currentTag}`,
+      url: `https://notehub.com/notes/filter/[...slug]/${currentTag}`,
+      images: [
+        {
+          url: 'https://ac.goit.global/fullstack/react/notehub-og-meta.jpg',
+          width: 1200,
+          height: 630,
+          alt: "NoteHub",
+        },
+      ],
+  }
   }
 }
 
