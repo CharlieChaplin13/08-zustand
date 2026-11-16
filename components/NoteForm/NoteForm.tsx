@@ -1,46 +1,38 @@
 'use client'
 
-import { Formik, Form, Field, ErrorMessage} from "formik";
-import * as Yup from "yup";
+import { useRouter } from 'next/navigation';
+import { useNoteDraftStore } from '@/lib/store/noteStore'
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { createNote } from "@/lib/api";
 import type { CreateNote } from "@/types/note";
 import toast from "react-hot-toast";
 import css from './NoteForm.module.css';
 
-interface NoteFormProps {
-    onClose: () => void;
-}
 
-const initialValues: CreateNote = {
-    title: '',
-    content: '', 
-    tag: 'Todo' 
-}
-
-const validationSchema = Yup.object().shape({
-  title: Yup.string()
-    .min(3, "Title must be at least 3 characters")
-    .max(50, "Title is too long")
-    .required("Title is required"),
-  content: Yup.string()
-    .max(500, "Content is too long"),
-  tag: Yup.string()
-    .oneOf(['Todo', 'Work', 'Personal', 'Meeting', 'Shopping'], "Please select a valid tag")
-    .required("Tag is required"),
-});
-
-export default function NoteForm ({ onClose }: NoteFormProps) {
+export default function NoteForm () {
   const queryClient = useQueryClient();
+  const router = useRouter()
+  const { draft, setDraft,clearDraft } = useNoteDraftStore();
+
+  const handleGoBack = () => {
+      router.push('/notes/filter/all');
+  };
+
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>
+  ) => {
+    const { name, value } = e.target;
+    setDraft({ [name]: value });
+  };
 
   const createNoteMutation = useMutation({
     mutationFn: createNote,
 
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notes"] })
-
-      onClose()
+      clearDraft();
       toast.success("Note created successfully!")
+      router.push('/notes/filter/all');
     },
 
     onError: () => {
@@ -50,50 +42,54 @@ export default function NoteForm ({ onClose }: NoteFormProps) {
 
   const isPending = createNoteMutation.isPending;
 
+  const handleSubmit = async (formData: FormData) => {
+    const newNote: CreateNote = {
+      title: String(formData.get('title') || ''),
+      content: String(formData.get('content') || ''),
+      tag: String(formData.get('tag') || 'Todo') as CreateNote['tag'],
+    };
+
+    createNoteMutation.mutate(newNote);
+  };
+
   return(
-    <Formik 
-      initialValues={initialValues} 
-      validationSchema={validationSchema}
-      onSubmit={(note: CreateNote) => createNoteMutation.mutate(note)}>
-      <Form className={css.form}>
+      <form action={handleSubmit} className={css.form}>
 
         <div className={css.formGroup}>
           <label htmlFor='title' >Title</label>
-          <Field 
+          <input
             id='title' 
             type="text" 
-            name="title" 
+            name="title"
+            defaultValue={draft.title}
+            onChange={handleChange}
+            required
+            minLength={3}
+            maxLength={50} 
             className={css.input} 
-          />
-          <ErrorMessage 
-            name="title" 
-            component="span"
-            className={css.error} 
           />
         </div>
 
         <div className={css.formGroup}>
           <label htmlFor='content'>Content</label>
-          <Field
-            as="textarea"
+          <textarea
             id='content'
             name="content"
+            defaultValue={draft.content}
+            onChange={handleChange}
             rows={8}
+            maxLength={500}
             className={css.textarea}
-          />
-          <ErrorMessage 
-            name="content"
-            component="span" 
-            className={css.error} 
           />
         </div>
 
         <div className={css.formGroup}>
           <label htmlFor='tag'>Tag</label>
-          <Field 
-            as="select" 
+          <select 
             id='tag'
-            name="tag" 
+            name='tag'
+            defaultValue={draft.tag}
+            onChange={handleChange}
             className={css.select}
           >
             <option value="Todo">Todo</option>
@@ -101,18 +97,14 @@ export default function NoteForm ({ onClose }: NoteFormProps) {
             <option value="Personal">Personal</option>
             <option value="Meeting">Meeting</option>
             <option value="Shopping">Shopping</option>
-          </Field>
-          <ErrorMessage 
-            name="tag"
-            component="span" 
-            className={css.error} />
+          </select>
         </div>
 
         <div className={css.actions}>
           <button 
             type="button" 
             className={css.cancelButton}
-            onClick={onClose}
+            onClick={handleGoBack}
             disabled={isPending}
         >
             Cancel
@@ -127,7 +119,6 @@ export default function NoteForm ({ onClose }: NoteFormProps) {
           </button>
         </div>
 
-      </Form>
-    </Formik>
+      </form>
   )
 }

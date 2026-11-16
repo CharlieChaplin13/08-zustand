@@ -4,18 +4,17 @@ import { useState } from 'react'
 import { useSearchParams, useRouter, usePathname } from 'next/navigation';
 import { useDebouncedCallback } from 'use-debounce';
 import { useQuery, keepPreviousData } from '@tanstack/react-query'
+import Link from 'next/link';
 import { fetchNotes } from '@/lib/api'
 import type { NoteTag } from '@/types/note';
 import SearchBox from '@/components/SearchBox/SearchBox'
 import NoteList from '@/components/NoteList/NoteList'
 import Pagination from '@/components/Pagination/Pagination';
-import Modal from '@/components/Modal/Modal';
-import NoteForm from '@/components/NoteForm/NoteForm';
 import Loader from '@/components/Loader/Loader';
 import EmptyState from '@/components/EmptyState/EmptyState';
 import ErrorMessage from '@/components/ErrorMessage/ErrorMessage';
 
-import css from "./Notes.client.module.css";
+import css from "./NotesPage.client.module.css";
 
 interface NotesClientProps {
   tag: string;
@@ -25,7 +24,6 @@ export default function App({tag}: NotesClientProps) {
 
   const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [isModalOpen, setIsModalOpen] = useState(false);
 
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -52,6 +50,7 @@ export default function App({tag}: NotesClientProps) {
       tag: tag as NoteTag | 'all'
     }),
     placeholderData: keepPreviousData,
+    staleTime: 60 * 1000,
   });
 
   const handleSearchChange = (value: string) => {
@@ -62,8 +61,6 @@ export default function App({tag}: NotesClientProps) {
   const notesList = data?.notes ?? []
   const totalPages = data?.totalPages ?? 0;
 
-  const openModal = () => setIsModalOpen(true);
-  const closeModal = () => setIsModalOpen(false);
 
   return (
     <div className={css.app}>
@@ -76,11 +73,11 @@ export default function App({tag}: NotesClientProps) {
           updatePage={updatePage}
         />
         )}
-		    <button 
-          onClick={openModal} 
+		    <Link 
+          href={'/notes/action/create'} 
           className={css.button}>
             Create note +
-          </button>
+        </Link>
       </header>
       <main className={css.mainContent}>
         {isLoading && !isError && <Loader variant={'global'}/>}
@@ -93,13 +90,7 @@ export default function App({tag}: NotesClientProps) {
         )}
 
         {isError && <ErrorMessage message={error instanceof Error ? error.message : "Failed to load notes."}/>}
-        {isSuccess && notesList.length === 0 && (<EmptyState searchQuery={searchQuery} onAction={openModal}/>)}
-
-        {isModalOpen && 
-        (<Modal onClose={closeModal}>
-            <NoteForm onClose={closeModal}/>
-          </Modal>
-        )}
+        {isSuccess && notesList.length === 0 && (<EmptyState searchQuery={searchQuery} onAction={() => router.push('/notes/action/create')}/>)}
       </main>
     </div>
   );
