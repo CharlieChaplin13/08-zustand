@@ -14,7 +14,7 @@ import Loader from '@/components/Loader/Loader';
 import EmptyState from '@/components/EmptyState/EmptyState';
 import ErrorMessage from '@/components/ErrorMessage/ErrorMessage';
 
-import css from "./NotesPage.client.module.css";
+import css from "./Notes.client.module.css";
 
 interface NotesClientProps {
   tag: string;
